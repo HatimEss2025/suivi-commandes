@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Suivi des Commandes</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+    }
+    .intro {
+      text-align: center;
+      font-size: 1.1rem;
+      margin-bottom: 1.5rem;
+      font-weight: bold;
+      color: #555;
+    }
+    .legend {
+      display: flex;
+      justify-content: space-around;
+      margin: 1rem auto;
+      max-width: 600px;
+    }
+    .legend div {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      animation: fadeIn 1.5s ease;
+    }
+    .box {
+      width: 20px;
+      height: 20px;
+    }
+    .box.green { background-color: #66bb6a; }
+    .box.red { background-color: #ef5350; }
+    .box.orange { background-color: #ffa726; }
+
+    .scroll-message {
+      animation: scrollText 6s ease-in-out infinite;
+      font-size: 1rem;
+      text-align: center;
+      margin-top: 1rem;
+      font-weight: bold;
+      color: #b36b00;
+    }
+
+    .stats-cards {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin: 1.5rem 0;
+      animation: fadeInScale 1s ease forwards;
+    }
+    .card {
+      background: #f0f0f0;
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      text-align: center;
+      font-size: 1.2rem;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInScale {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes scrollText {
+      0% { transform: translateY(100%); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(-100%); opacity: 0; }
+    }
+
+    input[type="file"], input[type="text"], input[type="date"], select {
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    #alerts {
+      margin: 1rem 0;
+    }
+    .alert {
+      padding: 1rem;
+      margin-top: 1rem;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+    .alert-red { background-color: #ffe5e5; color: #b30000; }
+    .alert-green { background-color: #e5ffe5; color: #006600; }
+    .alert-orange { background-color: #fff3e5; color: #b36b00; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    table th, table td {
+      border: 1px solid #ccc;
+      padding: 0.5rem;
+      text-align: left;
+    }
+
+    .toggle-btn {
+      background: none;
+      border: none;
+      color: #b36b00;
+      font-size: 1rem;
+      cursor: pointer;
+      text-align: left;
+      padding: 0;
+    }
+
+    .relance-list {
+      display: none;
+      margin-top: 0.5rem;
+      padding-left: 1rem;
+    }
+
+    .stats-section {
+      text-align: center;
+      animation: fadeInScale 1s ease;
+    }
+
+    .emoji {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      transition: transform 0.3s ease;
+    }
+
+    canvas {
+      max-width: 600px;
+      margin: 1rem auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Suivi des Commandes</h1>
+    <p class="intro">Gardez le contrôle : visualisez, filtrez et relancez vos commandes rapidement !</p>
+
+    <div class="stats-section">
+      <div class="legend">
+        <div><div class="box green"></div>Livrée : commande finalisée</div>
+        <div><div class="box red"></div>En cours : commande non encore traitée</div>
+        <div><div class="box orange"></div>Relance : dépassement de délai</div>
+      </div>
+
+      <div class="scroll-message">📢 Merci de penser à relancer vos commandes en attente !</div>
+      <div class="stats-cards">
+        <div class="card">📦 <strong id="count-green">0</strong> livrées</div>
+        <div class="card">⌛ <strong id="count-red">0</strong> en cours</div>
+        <div class="card">🔁 <strong id="count-orange">0</strong> relances</div>
+      </div>
+      <div id="emojiFace" class="emoji">😠</div>
+      <canvas id="statsChart"></canvas>
+    </div>
+
+    <input type="file" id="fileInput" accept=".xlsx" />
+    <input type="text" id="searchInput" placeholder="Rechercher une commande..." />
+    <select id="statusFilter">
+      <option value="">-- Filtrer par statut --</option>
+      <option value="Livrée">Livrée</option>
+      <option value="Traité">Traité</option>
+      <option value="En cours de traitement">En cours de traitement</option>
+      <option value="Reliquat">Reliquat</option>
+    </select>
+    <label>De : <input type="date" id="startDate"></label>
+    <label>À : <input type="date" id="endDate"></label>
+    <div id="alerts"></div>
+    <table id="ordersTable">
+      <thead>
+        <tr>
+          <th>Numéro</th>
+          <th>Date</th>
+          <th>Livraison à</th>
+          <th>Total TTC</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    const today = new Date();
+    let allOrders = [];
+    let chart;
+
+    document.getElementById("fileInput").addEventListener("change", function (e) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        allOrders = XLSX.utils.sheet_to_json(sheet);
+        applyFilters();
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    document.getElementById("searchInput").addEventListener("input", applyFilters);
+    document.getElementById("statusFilter").addEventListener("change", applyFilters);
+    document.getElementById("startDate").addEventListener("change", applyFilters);
+    document.getElementById("endDate").addEventListener("change", applyFilters);
+
+    function animateCounter(id, target) {
+      const el = document.getElementById(id);
+      let count = 0;
+      const step = target / 30;
+      const interval = setInterval(() => {
+        count += step;
+        if (count >= target) {
+          el.textContent = target;
+          clearInterval(interval);
+        } else {
+          el.textContent = Math.floor(count);
+        }
+      }, 30);
+    }
+
+    function applyFilters() {
+      const keyword = document.getElementById("searchInput").value.toLowerCase();
+      const status = document.getElementById("statusFilter").value;
+      const startDate = document.getElementById("startDate").value;
+      const endDate = document.getElementById("endDate").value;
+
+      const filtered = allOrders.filter(row => {
+        const matchesKeyword = Object.values(row).some(val =>
+          val && val.toString().toLowerCase().includes(keyword)
+        );
+        const matchesStatus = status === "" || row["Statut"] === status;
+
+        const rowDate = new Date(row["Date"]);
+        const matchesStart = !startDate || rowDate >= new Date(startDate);
+        const matchesEnd = !endDate || rowDate <= new Date(endDate);
+
+        return matchesKeyword && matchesStatus && matchesStart && matchesEnd;
+      });
+
+      displayOrders(filtered);
+    }
+
+    function displayOrders(data) {
+      const tbody = document.querySelector("#ordersTable tbody");
+      const alerts = document.getElementById("alerts");
+      const emoji = document.getElementById("emojiFace");
+      tbody.innerHTML = "";
+      alerts.innerHTML = "";
+
+      let red = 0, green = 0, orange = 0;
+      const relanceMessages = [];
+
+      data.forEach(row => {
+        const dateCommande = new Date(row["Date"]);
+        const diffTime = today - dateCommande;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        const tr = document.createElement("tr");
+        let relanceMessage = "";
+
+        if (row["Statut"] === "Livrée") {
+          tr.classList.add("alert-green");
+          green++;
+        } else if (row["Statut"] === "En cours de traitement") {
+          tr.classList.add("alert-red");
+          red++;
+        } else if ((row["Statut"] === "Traité" || row["Statut"] === "Reliquat") && diffDays > 7) {
+          tr.classList.add("alert-orange");
+          relanceMessage = `Commande ${row["Numéro de commande"]} à relancer (${row["Statut"]}, plus de 7 jours)`;
+          orange++;
+        }
+
+        tr.innerHTML = `
+          <td>${row["Numéro de commande"]}</td>
+          <td>${new Date(row["Date"]).toLocaleDateString("fr-FR")}</td>
+          <td>${row["Livraison à"]}</td>
+          <td>${row["Total TTC"]} €</td>
+          <td>${row["Statut"]}</td>
+        `;
+
+        tbody.appendChild(tr);
+
+        if (relanceMessage) {
+          relanceMessages.push(relanceMessage);
+        }
+      });
+
+      if (relanceMessages.length > 0) {
+        const container = document.createElement("div");
+        container.className = "alert alert-orange";
+        const toggle = document.createElement("button");
+        toggle.className = "toggle-btn";
+        toggle.innerHTML = "&#9654; Afficher les relances";
+        const list = document.createElement("div");
+        list.className = "relance-list";
+        list.innerHTML = relanceMessages.map(msg => `<div>${msg}</div>`).join("");
+        toggle.onclick = () => {
+          const isVisible = list.style.display === "block";
+          list.style.display = isVisible ? "none" : "block";
+          toggle.innerHTML = isVisible ? "&#9654; Afficher les relances" : "&#9660; Masquer les relances";
+        };
+        container.appendChild(toggle);
+        container.appendChild(list);
+        alerts.appendChild(container);
+      }
+
+      if (red > 0) {
+        const alert = document.createElement("div");
+        alert.className = "alert alert-red";
+        alert.textContent = `${red} commande(s) en cours de traitement.`;
+        alerts.appendChild(alert);
+      }
+
+      if (green > 0) {
+        const alert = document.createElement("div");
+        alert.className = "alert alert-green";
+        alert.textContent = `${green} commande(s) livrée(s).`;
+        alerts.appendChild(alert);
+      }
+
+      document.getElementById("count-green").textContent = 0;
+      document.getElementById("count-red").textContent = 0;
+      document.getElementById("count-orange").textContent = 0;
+      animateCounter("count-green", green);
+      animateCounter("count-red", red);
+      animateCounter("count-orange", orange);
+
+      emoji.textContent = (red === 0 && orange === 0) ? "😄" : "😠";
+
+      const ctx = document.getElementById("statsChart").getContext("2d");
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ["Livrées", "En cours", "Relances"],
+          datasets: [{
+            label: "Nombre de commandes",
+            data: [green, red, orange],
+            backgroundColor: ["#66bb6a", "#ef5350", "#ffa726"],
+            borderRadius: 10
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: context => `${context.label}: ${context.raw} commande(s)`
+              }
+            }
+          },
+          animation: {
+            duration: 1500,
+            easing: 'easeOutBounce'
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 1 }
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
