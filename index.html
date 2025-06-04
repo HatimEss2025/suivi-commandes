@@ -3,195 +3,217 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Suivi des Commandes</title>
+  <title>Suivi des Commandes - Relances Métier</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f5f5f5;
-      padding: 2rem;
-    }
-    .container {
-      max-width: 1200px;
-      margin: auto;
-      background: white;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
-    h1 {
-      text-align: center;
-    }
-    .intro {
-      text-align: center;
-      font-size: 1.1rem;
-      margin-bottom: 1.5rem;
-      font-weight: bold;
-      color: #555;
-    }
-    .legend {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      color: #f0f0f0;
+      margin: 0;
+      padding: 0;
       display: flex;
-      justify-content: space-around;
-      margin: 1rem auto;
-      max-width: 600px;
-    }
-    .legend div {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      animation: fadeIn 1.5s ease;
-    }
-    .box {
-      width: 20px;
-      height: 20px;
-    }
-    .box.green { background-color: #66bb6a; }
-    .box.red { background-color: #ef5350; }
-    .box.orange { background-color: #ffa726; }
-
-    .scroll-message {
-      animation: scrollText 6s ease-in-out infinite;
-      font-size: 1rem;
-      text-align: center;
-      margin-top: 1rem;
-      font-weight: bold;
-      color: #b36b00;
     }
 
-    .stats-cards {
-      display: flex;
-      justify-content: center;
-      gap: 2rem;
-      margin: 1.5rem 0;
-      animation: fadeInScale 1s ease forwards;
-    }
-    .card {
-      background: #f0f0f0;
-      padding: 1rem 2rem;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      text-align: center;
-      font-size: 1.2rem;
+    #relanceSidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 320px; 
+      height: 100vh;
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.7);
+      border-right: 2px solid #ffa000;
+      padding: 1rem;
+      z-index: 999;
+      font-size: 0.95rem;
+      color: #fffde7;
+      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.5);
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
+    #relanceSidebar h3 {
+      margin-top: 0;
+      margin-bottom: 1rem;
+      font-size: 1.3rem;
+      text-align: center;
+    }
+
+    .relance-scroller {
+      display: flex;
+      flex-direction: column;
+      animation: scrollRelances 25s linear infinite;
+    }
+
+    .relance-item {
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.95rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      animation: fadeInUp 0.8s ease;
+      transition: transform 0.3s ease;
+    }
+
+    .relance-item:hover {
+      transform: scale(1.03);
+    }
+
+    .relance-green { background: #2e7d32; color: #fff; }
+    .relance-orange { background: #fbc02d; color: #000; }
+    .relance-red { background: #c62828; color: #fff; }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
-    @keyframes fadeInScale {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
+    @keyframes scrollRelances {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-10%); }
     }
 
-    @keyframes scrollText {
-      0% { transform: translateY(100%); opacity: 0; }
-      10% { opacity: 1; }
-      90% { opacity: 1; }
-      100% { transform: translateY(-100%); opacity: 0; }
+    .container {
+      margin-left: 340px;
+      max-width: 1100px;
+      padding: 2rem;
     }
 
-    input[type="file"], input[type="text"], input[type="date"], select {
-      padding: 0.5rem;
+    h1 {
+      text-align: center;
+      font-size: 2.5rem;
       margin-bottom: 1rem;
-      display: block;
-      width: 100%;
-      box-sizing: border-box;
     }
 
-    #alerts {
-      margin: 1rem 0;
+    .intro {
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 1.2rem;
+      color: #ccc;
     }
-    .alert {
-      padding: 1rem;
-      margin-top: 1rem;
+
+    .stats-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .card {
+      background-color: #1e1e1e;
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+    }
+
+    .card strong {
+      display: block;
+      font-size: 2rem;
+      margin-top: 0.5rem;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .filters input, .filters select {
+      flex: 1;
+      padding: 0.6rem;
       border-radius: 8px;
-      font-weight: bold;
+      border: 1px solid #444;
+      background-color: #2a2a2a;
+      color: #fff;
     }
-    .alert-red { background-color: #ffe5e5; color: #b30000; }
-    .alert-green { background-color: #e5ffe5; color: #006600; }
-    .alert-orange { background-color: #fff3e5; color: #b36b00; }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 1rem;
+      background-color: #1b1b1b;
     }
-    table th, table td {
-      border: 1px solid #ccc;
-      padding: 0.5rem;
+
+    th, td {
+      padding: 0.75rem;
+      border: 1px solid #333;
       text-align: left;
     }
 
-    .toggle-btn {
-      background: none;
-      border: none;
-      color: #b36b00;
-      font-size: 1rem;
-      cursor: pointer;
-      text-align: left;
-      padding: 0;
+    th {
+      background-color: #2c2c2c;
     }
 
-    .relance-list {
-      display: none;
-      margin-top: 0.5rem;
-      padding-left: 1rem;
-    }
+    .alert-green { background-color: #2e3d2f; color: #4caf50; }
+    .alert-red { background-color: #4e1e1e; color: #f44336; }
+    .alert-orange { background-color: #4e342e; color: #fb8c00; }
 
-    .stats-section {
+    .footer {
       text-align: center;
-      animation: fadeInScale 1s ease;
-    }
-
-    .emoji {
-      font-size: 4rem;
-      margin-bottom: 1rem;
-      transition: transform 0.3s ease;
+      margin-top: 3rem;
+      font-size: 0.9rem;
+      color: #aaa;
     }
 
     canvas {
       max-width: 600px;
-      margin: 1rem auto;
+      margin: 2rem auto;
+      display: block;
+    }
+
+    #paginationControls {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    #paginationControls button {
+      margin: 0 4px;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      border: none;
+      background: #444;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    #paginationControls button.active {
+      background: #ffa000;
     }
   </style>
 </head>
 <body>
+
+  <div id="relanceSidebar">
+    <h3>🔔 Relances</h3>
+    <div id="relanceScroller" class="relance-scroller"></div>
+  </div>
+
   <div class="container">
     <h1>Suivi des Commandes</h1>
-    <p class="intro">Gardez le contrôle : visualisez, filtrez et relancez vos commandes rapidement !</p>
+    <p class="intro">Visualisez vos commandes et soyez alerté automatiquement selon les règles de suivi métier.</p>
 
-    <div class="stats-section">
-      <div class="legend">
-        <div><div class="box green"></div>Livrée : commande finalisée</div>
-        <div><div class="box red"></div>En cours : commande non encore traitée</div>
-        <div><div class="box orange"></div>Relance : dépassement de délai</div>
-      </div>
-
-      <div class="scroll-message">📢 Merci de penser à relancer vos commandes en attente !</div>
-      <div class="stats-cards">
-        <div class="card">📦 <strong id="count-green">0</strong> livrées</div>
-        <div class="card">⌛ <strong id="count-red">0</strong> en cours</div>
-        <div class="card">🔁 <strong id="count-orange">0</strong> relances</div>
-      </div>
-      <div id="emojiFace" class="emoji">😠</div>
-      <canvas id="statsChart"></canvas>
+    <div class="stats-cards">
+      <div class="card"><div>📦 Livrées</div><strong id="count-green">0</strong></div>
+      <div class="card"><div>⌛ En cours / Critique</div><strong id="count-red">0</strong></div>
+      <div class="card"><div>🔁 Relances / Moyennes</div><strong id="count-orange">0</strong></div>
     </div>
 
-    <input type="file" id="fileInput" accept=".xlsx" />
-    <input type="text" id="searchInput" placeholder="Rechercher une commande..." />
-    <select id="statusFilter">
-      <option value="">-- Filtrer par statut --</option>
-      <option value="Livrée">Livrée</option>
-      <option value="Traité">Traité</option>
-      <option value="En cours de traitement">En cours de traitement</option>
-      <option value="Reliquat">Reliquat</option>
-    </select>
-    <label>De : <input type="date" id="startDate"></label>
-    <label>À : <input type="date" id="endDate"></label>
-    <div id="alerts"></div>
-    <table id="ordersTable">
+    <div class="filters">
+      <input type="file" id="fileInput" accept=".xlsx">
+      <input type="text" id="searchInput" placeholder="Rechercher...">
+      <select id="statusFilter">
+        <option value="">Filtrer par statut</option>
+        <option value="Livrée">Livrée</option>
+        <option value="Traité">Traité</option>
+        <option value="En cours de traitement">En cours</option>
+        <option value="Reliquat">Reliquat</option>
+      </select>
+      <input type="date" id="startDate">
+      <input type="date" id="endDate">
+    </div>
+
+    <table>
       <thead>
         <tr>
           <th>Numéro</th>
@@ -201,14 +223,30 @@
           <th>Statut</th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <tbody id="ordersTable"></tbody>
     </table>
+
+    <div id="paginationControls"></div>
+    <canvas id="statsChart"></canvas>
+    <div class="footer">&copy; 2025 Suivi des Commandes</div>
   </div>
 
   <script>
-    const today = new Date();
+    const urlGithub = "https://raw.githubusercontent.com/hatimess2025/Stats_Commandes_GA_VA/main/data/commandes.xlsx";
     let allOrders = [];
     let chart;
+
+    window.addEventListener("DOMContentLoaded", () => {
+      fetch(urlGithub)
+        .then(r => r.arrayBuffer())
+        .then(data => {
+          const workbook = XLSX.read(data, { type: "array" });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          allOrders = XLSX.utils.sheet_to_json(sheet);
+          applyFilters();
+        })
+        .catch(err => console.error("Erreur chargement GitHub:", err));
+    });
 
     document.getElementById("fileInput").addEventListener("change", function (e) {
       const file = e.target.files[0];
@@ -225,8 +263,7 @@
 
     document.getElementById("searchInput").addEventListener("input", applyFilters);
     document.getElementById("statusFilter").addEventListener("change", applyFilters);
-    document.getElementById("startDate").addEventListener("change", applyFilters);
-    document.getElementById("endDate").addEventListener("change", applyFilters);
+
 
     function animateCounter(id, target) {
       const el = document.getElementById(id);
@@ -244,6 +281,7 @@
     }
 
     function applyFilters() {
+      currentPage = 1;
       const keyword = document.getElementById("searchInput").value.toLowerCase();
       const status = document.getElementById("statusFilter").value;
       const startDate = document.getElementById("startDate").value;
@@ -254,45 +292,55 @@
           val && val.toString().toLowerCase().includes(keyword)
         );
         const matchesStatus = status === "" || row["Statut"] === status;
-
         const rowDate = new Date(row["Date"]);
         const matchesStart = !startDate || rowDate >= new Date(startDate);
         const matchesEnd = !endDate || rowDate <= new Date(endDate);
-
         return matchesKeyword && matchesStatus && matchesStart && matchesEnd;
       });
 
       displayOrders(filtered);
+      displayRelances(filtered);
     }
 
     function displayOrders(data) {
-      const tbody = document.querySelector("#ordersTable tbody");
-      const alerts = document.getElementById("alerts");
-      const emoji = document.getElementById("emojiFace");
+      const tbody = document.getElementById("ordersTable");
+      const pagination = document.getElementById("paginationControls");
       tbody.innerHTML = "";
-      alerts.innerHTML = "";
+      pagination.innerHTML = "";
+
+      const totalPages = Math.ceil(data.length / rowsPerPage);
+      const paginatedData = data.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
       let red = 0, green = 0, orange = 0;
-      const relanceMessages = [];
 
-      data.forEach(row => {
-        const dateCommande = new Date(row["Date"]);
-        const diffTime = today - dateCommande;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
+      paginatedData.forEach(row => {
         const tr = document.createElement("tr");
-        let relanceMessage = "";
+        const statut = row["Statut"];
+        const trDate = new Date(row["Date"]);
+        const diffDays = Math.ceil((today - trDate) / (1000 * 60 * 60 * 24));
 
-        if (row["Statut"] === "Livrée") {
-          tr.classList.add("alert-green");
+        if (statut === "Livrée") {
+          tr.className = "alert-green";
           green++;
-        } else if (row["Statut"] === "En cours de traitement") {
-          tr.classList.add("alert-red");
-          red++;
-        } else if ((row["Statut"] === "Traité" || row["Statut"] === "Reliquat") && diffDays > 7) {
-          tr.classList.add("alert-orange");
-          relanceMessage = `Commande ${row["Numéro de commande"]} à relancer (${row["Statut"]}, plus de 7 jours)`;
+        } else if (statut === "En cours de traitement" && diffDays > 2) {
+          tr.className = "alert-orange";
           orange++;
+        } else if (statut === "Traité") {
+          if (diffDays > 15) {
+            tr.className = "alert-red";
+            red++;
+          } else if (diffDays > 7) {
+            tr.className = "alert-orange";
+            orange++;
+          }
+        } else if (statut === "Reliquat") {
+          if (diffDays > 30) {
+            tr.className = "alert-red";
+            red++;
+          } else if (diffDays > 15) {
+            tr.className = "alert-orange";
+            orange++;
+          }
         }
 
         tr.innerHTML = `
@@ -300,66 +348,34 @@
           <td>${new Date(row["Date"]).toLocaleDateString("fr-FR")}</td>
           <td>${row["Livraison à"]}</td>
           <td>${row["Total TTC"]} €</td>
-          <td>${row["Statut"]}</td>
+          <td>${statut}</td>
         `;
-
         tbody.appendChild(tr);
-
-        if (relanceMessage) {
-          relanceMessages.push(relanceMessage);
-        }
       });
 
-      if (relanceMessages.length > 0) {
-        const container = document.createElement("div");
-        container.className = "alert alert-orange";
-        const toggle = document.createElement("button");
-        toggle.className = "toggle-btn";
-        toggle.innerHTML = "&#9654; Afficher les relances";
-        const list = document.createElement("div");
-        list.className = "relance-list";
-        list.innerHTML = relanceMessages.map(msg => `<div>${msg}</div>`).join("");
-        toggle.onclick = () => {
-          const isVisible = list.style.display === "block";
-          list.style.display = isVisible ? "none" : "block";
-          toggle.innerHTML = isVisible ? "&#9654; Afficher les relances" : "&#9660; Masquer les relances";
-        };
-        container.appendChild(toggle);
-        container.appendChild(list);
-        alerts.appendChild(container);
-      }
-
-      if (red > 0) {
-        const alert = document.createElement("div");
-        alert.className = "alert alert-red";
-        alert.textContent = `${red} commande(s) en cours de traitement.`;
-        alerts.appendChild(alert);
-      }
-
-      if (green > 0) {
-        const alert = document.createElement("div");
-        alert.className = "alert alert-green";
-        alert.textContent = `${green} commande(s) livrée(s).`;
-        alerts.appendChild(alert);
-      }
-
-      document.getElementById("count-green").textContent = 0;
-      document.getElementById("count-red").textContent = 0;
-      document.getElementById("count-orange").textContent = 0;
       animateCounter("count-green", green);
       animateCounter("count-red", red);
       animateCounter("count-orange", orange);
 
-      emoji.textContent = (red === 0 && orange === 0) ? "😄" : "😠";
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement("button");
+        btn.textContent = i;
+        btn.className = i === currentPage ? "active" : "";
+        btn.onclick = () => {
+          currentPage = i;
+          displayOrders(data);
+        };
+        pagination.appendChild(btn);
+      }
 
       const ctx = document.getElementById("statsChart").getContext("2d");
       if (chart) chart.destroy();
       chart = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: ["Livrées", "En cours", "Relances"],
+          labels: ["Livrées", "En cours / Critique", "Relances"],
           datasets: [{
-            label: "Nombre de commandes",
+            label: "Commandes",
             data: [green, red, orange],
             backgroundColor: ["#66bb6a", "#ef5350", "#ffa726"],
             borderRadius: 10
@@ -367,25 +383,67 @@
         },
         options: {
           responsive: true,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: context => `${context.label}: ${context.raw} commande(s)`
-              }
-            }
-          },
-          animation: {
-            duration: 1500,
-            easing: 'easeOutBounce'
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: { stepSize: 1 }
-            }
+          plugins: { legend: { display: false } },
+          animation: { duration: 1500, easing: 'easeOutBounce' },
+          scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+      });
+    }
+
+    function displayRelances(data) {
+      const relanceScroller = document.getElementById("relanceScroller");
+      relanceScroller.innerHTML = "";
+      const relances = [];
+
+      data.forEach(row => {
+        const statut = row["Statut"];
+        const trDate = new Date(row["Date"]);
+        const diffDays = Math.ceil((today - trDate) / (1000 * 60 * 60 * 24));
+        let message = "", priority = "";
+
+        if (statut === "En cours de traitement" && diffDays > 2) {
+          message = `En cours depuis ${diffDays} jours`;
+          priority = "orange";
+        } else if (statut === "Traité") {
+          if (diffDays > 15) {
+            message = `Traité depuis ${diffDays} jours`;
+            priority = "red";
+          } else if (diffDays > 7) {
+            message = `Vérifier livraison (${diffDays} jours)`;
+            priority = "orange";
+          }
+        } else if (statut === "Reliquat") {
+          if (diffDays > 30) {
+            message = `Reliquat critique (${diffDays} jours)`;
+            priority = "red";
+          } else if (diffDays > 15) {
+            message = `Relancer fournisseur (${diffDays} jours)`;
+            priority = "orange";
           }
         }
+
+        if (message) {
+          relances.push({
+            cmd: row["Numéro de commande"],
+            date: new Date(row["Date"]).toLocaleDateString("fr-FR"),
+            client: row["Livraison à"],
+            total: row["Total TTC"],
+            statut,
+            message,
+            priority
+          });
+        }
+      });
+
+      relances.forEach(item => {
+        const div = document.createElement("div");
+        div.className = `relance-item relance-${item.priority}`;
+        div.innerHTML = `
+          <strong>Cmd #${item.cmd}</strong>
+          <div>${item.message}</div>
+          <small>📅 ${item.date} | 👤 ${item.client} | 💰 ${item.total}€ | 📦 ${item.statut}</small>
+        `;
+        relanceScroller.appendChild(div);
       });
     }
   </script>
